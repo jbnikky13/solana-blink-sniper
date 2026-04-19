@@ -5,7 +5,7 @@ export const PROXY_API = (url) =>
   `${API_BASE_URL}/api/proxy-api?url=${encodeURIComponent(url)}`;
 
 // QuickNode Solana RPC — direct endpoint (supports browser CORS)
-export const QUICKNODE_RPC = 'https://blue-methodical-wind.solana-mainnet.quiknode.pro/868f6a3418a3d888082ff32f1f75416a08735fdd';
+export const QUICKNODE_RPC = import.meta.env.VITE_QUICKNODE_URL || 'YOUR_BACKUP_URL_HERE';
 
 // Keep alias for any legacy references
 export const QUICKNODE_PROXY = QUICKNODE_RPC;
