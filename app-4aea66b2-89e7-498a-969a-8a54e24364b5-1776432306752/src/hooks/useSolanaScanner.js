@@ -105,7 +105,7 @@ export function useSolanaScanner() {
           blockTime: b.result.value.blockTime,
           txCount: b.result.value.transactions?.length ?? 0,
           signatures: (b.result.value.transactions || []).slice(0, 5).map(t =>
-            typeof t === 'string' ? t : t.transaction?.signatures?.[0]
+            typeof t === 'string' ? t : t.transaction?.[0]
           ).filter(Boolean),
           blockhash: b.result.value.blockhash,
           parentSlot: b.result.value.parentSlot,
