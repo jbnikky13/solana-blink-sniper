@@ -8,6 +8,7 @@ import StatsBar from './components/StatsBar';
 import SnipeModal from './components/SnipeModal';
 import { useSolanaScanner } from './hooks/useSolanaScanner';
 import { supabase } from './lib/supabase';
+import { getMarketData } from './tokenService';
 
 export default function App() {
   const { blocks, transactions, networkStats, loading, error, lastScan, scan } = useSolanaScanner();
@@ -18,6 +19,26 @@ export default function App() {
   const [toast, setToast] = useState(null);
   const [activeTab, setActiveTab] = useState('transactions'); // 'blocks' | 'transactions' | 'targets'
 
+  // Phase 2: Create a state to store our enriched market data
+  const [marketDetails, setMarketDetails] = useState({});
+
+  // Use an effect to watch for new transactions
+  React.useEffect(() => {
+    const updateMarketData = async () => {
+      // Check the most recent transaction
+      const latestTx = transactions[0];
+      
+      // If we have a new transaction and it has a mint address
+      if (latestTx?.mint && !marketDetails[latestTx.mint]) {
+        const data = await getMarketData(latestTx.mint);
+        if (data) {
+          setMarketDetails(prev => ({ ...prev, [latestTx.mint]: data }));
+        }
+      }
+    };
+
+    updateMarketData();
+  }, [transactions]);
   // Load snipe targets from Supabase
   const loadTargets = useCallback(async () => {
     setTargetsLoading(true);

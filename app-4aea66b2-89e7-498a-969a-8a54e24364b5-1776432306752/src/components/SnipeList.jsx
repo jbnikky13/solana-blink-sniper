@@ -161,7 +161,18 @@ function SnipeRow({ target, onUpdateStatus, onDelete }) {
         >
           <Trash2 size={12} />
         </button>
-      </div>
+        <div className="flex gap-2 mt-2 pt-2 border-t border-gray-800">
+      <a href={`https://twitter.com/search?q=${target.mint}`} target="_blank" className="bg-blue-500 hover:bg-blue-400 text-[10px] px-2 py-1 rounded text-white transition">
+        Twitter
+      </a>
+      <a href={`https://t.me/s/search?q=${target.mint}`} target="_blank" className="bg-blue-700 hover:bg-blue-600 text-[10px] px-2 py-1 rounded text-white transition">
+        Telegram
+      </a>
+      <a href={`https://dexscreener.com/solana/${target.mint}`} target="_blank" className="bg-pink-600 hover:bg-pink-500 text-[10px] px-2 py-1 rounded text-white transition">
+        DexScreener
+      </a>
     </div>
-  );
+  </div>
+</div> 
+ );
 }
