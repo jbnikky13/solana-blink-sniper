@@ -118,7 +118,7 @@ function TxRow({ tx, onSnipe }) {
 
       {/* Tokens */}
       <td className="px-4 py-2.5">
-        {hasMints ? (
+        {true ? (
           <div className="flex flex-wrap gap-1">
             {tx.mints.slice(0, 2).map((mint) => (
               <a
@@ -157,7 +157,7 @@ function TxRow({ tx, onSnipe }) {
 
       {/* Snipe button */}
       <td className="px-4 py-2.5 text-center">
-        {hasMints ? (
+        {true ? (
           <button
             onClick={() => onSnipe(tx)}
             className="text-brand-muted hover:text-brand-accent transition-colors p-1 rounded hover:bg-brand-accent/10"
