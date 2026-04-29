@@ -72,7 +72,7 @@ export default function App() {
     const payload = {
       token_address: mint,
       slot: tx.slot,
-      block_time: tx.blockTime ? new Date(tx.blockTime * 1000).toISOString() : null,
+      block_time: tx.blockTime || null,
       tx_signature: tx.sig,
       notes: notes || null,
       status: 'watching',
