@@ -2,12 +2,17 @@ from research_desk.risk import Decision, ProposedPaperTrade, evaluate_trade
 
 
 def proposal(**overrides):
-    values = dict(market="crypto", instrument="BTC-USD", asset_type="spot", side="buy", entry=100.0, stop=99.0, quantity=10.0, equity_usd=1000.0, data_timestamp="2026-10-30T01:00:00Z", quote_is_executable=True)
+    values = dict(
+        market="crypto", instrument="BTC-USD", asset_type="spot", side="buy",
+        entry=100.0, stop=99.0, quantity=10.0, equity_usd=1000.0,
+        day_start_equity_usd=1000.0, daily_pnl_usd=0.0,
+        data_timestamp="2026-10-30T01:00:00Z", quote_is_executable=True,
+    )
     values.update(overrides)
     return ProposedPaperTrade(**values)
 
 
-def test_rejects_options():
+def test_rejects_options_unconditionally():
     result = evaluate_trade(proposal(asset_type="options"))
     assert result.decision is Decision.REJECT
     assert result.reason == "OPTIONS_PROHIBITED"
@@ -30,8 +35,8 @@ def test_approves_trade_within_one_percent_risk():
     assert result.risk_usd == 10.0
 
 
-def test_daily_loss_halt():
-    result = evaluate_trade(proposal(realized_daily_pnl_usd=-30.0))
+def test_daily_loss_uses_day_start_equity():
+    result = evaluate_trade(proposal(equity_usd=800.0, day_start_equity_usd=1000.0, daily_pnl_usd=-30.0))
     assert result.reason == "DAILY_LOSS_LIMIT_REACHED"
 
 
