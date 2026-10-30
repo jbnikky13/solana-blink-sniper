@@ -15,27 +15,32 @@ export function getRadarSignal(token) {
   const flowRatio = buys / Math.max(1, sells);
   const flags = Array.isArray(security.flags) ? security.flags.map(String) : [];
   const blocked = security.isHoneypot === true
-    || security.mintAuthorityRevoked === false
-    || security.freezeAuthorityRevoked === false
-    || (Number.isFinite(security.top10HolderPct) && security.top10HolderPct > 25)
+    || (token.chain === 'solana' && (security.mintAuthorityRevoked === false
+      || security.freezeAuthorityRevoked === false
+      || (Number.isFinite(security.top10HolderPct) && security.top10HolderPct > 25)))
     || flags.some((flag) => BLOCK_FLAGS.has(flag));
 
   if (blocked) return { signal: 'BLOCKED', reason: 'A configured hard security limit was breached', flowRatio };
 
-  const securityVerified = security.status === 'verified'
-    && security.isHoneypot === false
-    && security.mintAuthorityRevoked === true
-    && security.freezeAuthorityRevoked === true
-    && security.holderConcentrationStatus === 'verified'
-    && Number.isFinite(security.top10HolderPct)
-    && security.top10HolderPct <= 25;
+  if (token.chain === 'solana') {
+    const securityVerified = security.status === 'verified'
+      && security.isHoneypot === false
+      && security.mintAuthorityRevoked === true
+      && security.freezeAuthorityRevoked === true
+      && security.holderConcentrationStatus === 'verified'
+      && Number.isFinite(security.top10HolderPct)
+      && security.top10HolderPct <= 25;
 
-  if (!securityVerified) {
-    return { signal: 'VERIFY', reason: 'Authority or complete holder-concentration verification is missing', flowRatio };
+    if (!securityVerified) {
+      return { signal: 'VERIFY', reason: 'Authority or complete holder-concentration verification is missing', flowRatio };
+    }
+    if (liquidity < 40000) {
+      return { signal: 'WATCH', reason: 'Liquidity is below the $40,000 discovery threshold', flowRatio };
+    }
+  } else if (security.status !== 'checked' || security.isHoneypot === true) {
+    return { signal: 'VERIFY', reason: 'Security verification is incomplete', flowRatio };
   }
-  if (liquidity < 40000) {
-    return { signal: 'WATCH', reason: 'Liquidity is below the $40,000 discovery threshold', flowRatio };
-  }
+
   if (flowRatio >= 1.2 && Number(token.score || 0) >= 70) {
     return { signal: 'HOT', reason: 'Security gates passed with strong early momentum', flowRatio };
   }
