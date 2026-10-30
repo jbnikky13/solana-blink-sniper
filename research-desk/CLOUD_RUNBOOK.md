@@ -36,3 +36,17 @@ Official Headway documentation identifies the demo server as Headway-Demo / mt5.
 ## Provider order
 
 Read MARKET_COVERAGE.md. Do not add provider credentials until data licensing, symbol coverage, history depth, timestamps, paper venue semantics and cost models have been verified.
+
+
+## Optional public crypto research feed
+
+The first read-only CCXT adapter can be configured without exchange API keys. Add these values to the local .env only after choosing an exchange and verifying its availability in your region:
+
+```dotenv
+CRYPTO_EXCHANGE_ID=binance
+CRYPTO_SYMBOLS=BTC/USDT,ETH/USDT,SOL/USDT
+CRYPTO_TIMEFRAME=1h
+CRYPTO_BAR_LIMIT=500
+```
+
+This adapter requests spot OHLCV only, drops the still-forming candle, records source/receipt timestamps, validates the bars and stores them in SQLite. It does not authenticate, submit orders, or provide broker-grade execution prices. QUANT remains blocked until the research pipeline is connected and tested against a sufficiently deep dataset.
