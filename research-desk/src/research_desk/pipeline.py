@@ -62,7 +62,7 @@ async def scout() -> str:
         status = "PROVIDER_ERROR" if errors else "NO_CLOSED_BARS"
         detail = "No usable crypto bars stored. " + (", ".join(errors) if errors else "Provider returned no closed candles.")
     record_job("SCOUT", status, detail)
-    return f"SCOUT: {status}\\n{detail}"
+    return f"SCOUT: {status}\n{detail}"
 
 
 async def quant() -> str:
