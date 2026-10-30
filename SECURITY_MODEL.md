@@ -24,7 +24,7 @@ For that reason the RPC-derived value is marked `estimated`, never `verified`. T
 
 ## Analyst score
 
-The existing discovery score remains a heuristic ranking score, not a calibrated probability of profit or a validated trading model. It is labeled `heuristic-discovery-v1`. A score of 70 is only a research threshold; it is not authorization to buy.
+The existing discovery score remains a heuristic ranking score, not a calibrated probability of profit or a validated trading model. It is labeled `heuristic-discovery-v1`. A score of 70 is only a research threshold; it is not an independent analyst agent, a security approval, or authorization to buy. The UI reports `THRESHOLD_MET` rather than `PASS` to avoid presenting a score threshold as an agent decision.
 
 ## Safety status
 
