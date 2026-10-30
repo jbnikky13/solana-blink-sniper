@@ -13,7 +13,7 @@ export function scannerAgent(token) {
   if(s.isHoneypot!==false) reasons.push('Honeypot not explicitly false');
   if(s.mintAuthorityRevoked!==true) reasons.push('Mint authority not confirmed revoked');
   if(s.freezeAuthorityRevoked!==true) reasons.push('Freeze authority not confirmed revoked');
-  if(s.holderConcentrationStatus!=='verified'||!Number.isFinite(Number(s.top10HolderPct))||Number(s.top10HolderPct)>25) reasons.push('Complete top-holder verification missing or above 25%');
+  if(s.holderConcentrationStatus!=='verified'||s.top10HolderPct===null||s.top10HolderPct===undefined||!Number.isFinite(Number(s.top10HolderPct))||Number(s.top10HolderPct)<0||Number(s.top10HolderPct)>25) reasons.push('Complete top-holder verification missing or above 25%');
   if(token?.scannerGate?.decision!=='PASS') reasons.push('Existing scanner gate did not return PASS');
   return {agent:'scanner',decision:reasons.length?'REJECT':'PASS',reasons};
 }
