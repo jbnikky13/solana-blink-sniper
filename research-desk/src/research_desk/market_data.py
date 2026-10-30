@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Iterable
 
 
@@ -57,6 +57,8 @@ def validate_bars(
         previous_timestamp = timestamp
         if received_at < timestamp:
             errors.append(f"{prefix}_RECEIVED_BEFORE_SOURCE_TIMESTAMP")
+        if timestamp > now_utc.astimezone(timezone.utc) + timedelta(seconds=5):
+            errors.append(f"{prefix}_FUTURE_SOURCE_TIMESTAMP")
         prices = (bar.open, bar.high, bar.low, bar.close)
         if any(price <= 0 for price in prices):
             errors.append(f"{prefix}_NON_POSITIVE_PRICE")
