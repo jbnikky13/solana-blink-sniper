@@ -10,6 +10,7 @@ import {
 import { buildNarrativeSnapshot, attachNarrativeIntelligence } from './narrativeIntelligence';
 import { observeTokenBirths } from './birthWatch';
 import { fetchSolanaSecurity } from './solanaSecurity';
+import { evaluateSolanaScannerGate } from './scannerGate';
 
 const ERC20 = { name: '0x06fdde03', symbol: '0x95d89b41', decimals: '0x313ce567', totalSupply: '0x18160ddd' };
 async function getJson(url) { const res = await fetch(url); if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.json(); }
@@ -133,6 +134,9 @@ export function rankEarlyToken(token, trendingWords = []) {
     score: Math.max(0, Math.min(100, Math.round(score))),
     narrativeHits,
     verdict: hardBlocked ? 'BLOCKED' : verified ? 'SECURITY VERIFIED' : 'VERIFY BEFORE ENTRY',
+    scannerGate: evaluateSolanaScannerGate(token),
+    analystDecision: Math.max(0, Math.min(100, Math.round(score))) >= 70 ? 'PASS' : 'REJECT',
+    scoreModel: 'heuristic-discovery-v1',
   };
 }
 export function extractTrendingWords(trending,tokens=[]){const stop=new Set(['the','and','for','with','from','this','that','token','coin','chain','crypto','new']);const counts=new Map();const add=(value)=>String(value||'').toLowerCase().match(/[a-z][a-z0-9_-]{2,}/g)?.forEach((w)=>{if(!stop.has(w)&&!/^\d+$/.test(w))counts.set(w,(counts.get(w)||0)+1);});(Array.isArray(trending)?trending:[]).forEach((x)=>add(x.name||x.title||x.slug||x.description));tokens.forEach((x)=>{add(x.name);add(x.symbol);add(x.description);});return[...counts.entries()].sort((a,b)=>b[1]-a[1]).slice(0,20).map(([w])=>w);}
