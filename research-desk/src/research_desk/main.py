@@ -11,7 +11,11 @@ log = logging.getLogger("research-desk")
 
 def authorized(update: Update) -> bool:
     user = update.effective_user
-    return bool(user and settings.telegram_allowed_user_id and user.id == settings.telegram_allowed_user_id)
+    chat = update.effective_chat
+    return bool(
+        user and chat and chat.type == "private" and chat.id == user.id
+        and settings.telegram_allowed_user_id and user.id == settings.telegram_allowed_user_id
+    )
 
 
 async def reply(update: Update, text: str) -> None:
