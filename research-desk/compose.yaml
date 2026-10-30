@@ -1,0 +1,16 @@
+services:
+  research-desk:
+    build: .
+    container_name: blink-n-snipe-research-desk
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      RESEARCH_DESK_DB: /app/data/research_desk.sqlite3
+      TIMEZONE: Africa/Lagos
+    volumes:
+      - research_desk_data:/app/data
+    init: true
+
+volumes:
+  research_desk_data:
