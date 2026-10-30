@@ -42,3 +42,8 @@ def test_rejects_duplicate_or_out_of_order_timestamps():
 def test_rejects_naive_timestamps():
     report = validate_bars([bar(timestamp=datetime(2026, 10, 30, 7, 0), received_at=NOW)], now=NOW)
     assert "BAR_0_TIMEZONE_MISSING" in report.errors
+
+
+def test_rejects_future_dated_bar():
+    report = validate_bars([bar(timestamp=NOW + timedelta(minutes=1), received_at=NOW + timedelta(minutes=2))], now=NOW)
+    assert "BAR_0_FUTURE_SOURCE_TIMESTAMP" in report.errors
