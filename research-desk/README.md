@@ -30,7 +30,9 @@ Agenkit package: https://pypi.org/project/agenkit/ . Project docs: https://agenk
 - SQLite-persisted operator controls and job audit history.
 - Initial fail-closed risk gate and unit tests.
 - Normalized OHLCV schema with timestamp, freshness, ordering and OHLC validation.
-- Read-only CCXT crypto spot OHLCV adapter and SQLite market-bar persistence; configurable but not yet connected to an exchange.\n- Next-bar-open baseline backtester with fee/slippage assumptions and mark-to-market drawdown.\n- Ten initial hypothesis templates, chronological walk-forward window generation, 1,000-path Monte Carlo drawdown and a pre-registered 25-point scorecard.
+- Read-only CCXT crypto spot OHLCV adapter and SQLite market-bar persistence; configurable but not yet connected to an exchange.
+- Next-bar-open baseline backtester with fee/slippage assumptions and mark-to-market drawdown.
+- Ten initial hypothesis templates, chronological walk-forward window generation, 1,000-path Monte Carlo drawdown and a pre-registered 25-point scorecard.
 - Dockerfile and Compose example with persistent SQLite volume.
 - Market provider coverage and cloud runbooks.
 
