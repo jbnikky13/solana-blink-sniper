@@ -7,6 +7,7 @@ import SnipeList from './components/SnipeList';
 import StatsBar from './components/StatsBar';
 import SnipeModal from './components/SnipeModal';
 import EarlyGems from './components/EarlyGems';
+import PaperTradingPanel from './components/PaperTradingPanel';
 import { useSolanaScanner } from './hooks/useSolanaScanner';
 import { supabase } from './lib/supabase';
 import { getMarketData } from './tokenService';
@@ -59,7 +60,7 @@ export default function App() {
   const hotTokens = earlyTokens.filter((token) => getRadarSignal(token).signal === 'HOT').length;
   const tabs = [
     { id: 'transactions', label: 'Transactions', count: transactions.length }, { id: 'blocks', label: 'Blocks', count: blocks.length },
-    { id: 'targets', label: 'Snipe Targets', count: targets.length }, { id: 'early', label: 'Early Radar', count: earlyTokens.length },
+    { id: 'targets', label: 'Snipe Targets', count: targets.length }, { id: 'early', label: 'Early Radar', count: earlyTokens.length }, { id: 'paper', label: 'Paper Trading', count: undefined },
   ];
 
   return <div className="min-h-screen bg-brand-bg text-brand-text flex flex-col">
@@ -77,7 +78,8 @@ export default function App() {
       <div className="flex items-center gap-1 border-b border-brand-border overflow-x-auto">
         {tabs.map((tab) => <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`whitespace-nowrap px-4 py-2.5 text-sm font-medium transition-colors flex items-center gap-2 border-b-2 -mb-px ${activeTab === tab.id ? 'border-brand-accent text-white' : 'border-transparent text-brand-subtext hover:text-white hover:border-brand-border'}`}>{tab.label}{tab.count > 0 && <span className={`text-xs rounded-full px-1.5 py-0.5 font-mono ${activeTab === tab.id ? 'bg-brand-accent text-black' : 'bg-brand-border text-brand-subtext'}`}>{tab.count}</span>}</button>)}
       </div>
-      {activeTab === 'early' && <EarlyGems tokens={earlyTokens} trendingWords={trendingWords} loading={earlyLoading} onRefresh={runEarlyScan}/>} 
+      {activeTab === 'early' && <EarlyGems tokens={earlyTokens} trendingWords={trendingWords} loading={earlyLoading} onRefresh={runEarlyScan}/>}
+      {activeTab === 'paper' && <PaperTradingPanel tokens={earlyTokens}/ >} 
       {activeTab === 'transactions' && <TransactionList transactions={transactions} onSnipe={handleSnipeClick}/>} 
       {activeTab === 'blocks' && <BlockList blocks={blocks}/>} 
       {activeTab === 'targets' && <SnipeList targets={targets} onUpdateStatus={handleUpdateStatus} onDelete={handleDelete}/>} 
