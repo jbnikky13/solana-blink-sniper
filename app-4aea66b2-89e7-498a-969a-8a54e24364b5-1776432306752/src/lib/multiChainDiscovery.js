@@ -138,7 +138,7 @@ export function rankEarlyToken(token, trendingWords = []) {
     narrativeHits,
     verdict: hardBlocked ? 'BLOCKED' : verified ? 'SECURITY VERIFIED' : 'VERIFY BEFORE ENTRY',
     scannerGate: token.chain === 'solana' ? evaluateSolanaScannerGate(token) : { decision: 'NOT_APPLICABLE', reasons: ['Solana scanner policy does not apply to this chain'] },
-    analystDecision: Math.max(0, Math.min(100, Math.round(score))) >= 70 ? 'PASS' : 'REJECT',
+    scoreThresholdStatus: Math.max(0, Math.min(100, Math.round(score))) >= 70 ? 'THRESHOLD_MET' : 'BELOW_THRESHOLD',
     scoreModel: 'heuristic-discovery-v1',
   };
 }
