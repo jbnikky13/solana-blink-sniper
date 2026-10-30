@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "blink-n-snipe-research-desk"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = ["agenkit==0.92.2", "python-telegram-bot==22.5", "APScheduler==3.11.0", "pydantic-settings==2.11.0"]
+
+[project.optional-dependencies]
+dev = ["pytest==8.4.2", "pytest-asyncio==1.2.0"]
+
+[project.scripts]
+research-desk = "research_desk.main:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
