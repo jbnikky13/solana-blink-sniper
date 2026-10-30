@@ -19,7 +19,7 @@ export default function App() {
   const [targets, setTargets] = useState([]); const [targetsLoading, setTargetsLoading] = useState(true);
   const [snipeModal, setSnipeModal] = useState(null); const [toast, setToast] = useState(null); const [activeTab, setActiveTab] = useState('transactions');
   const [marketDetails, setMarketDetails] = useState({}); const [earlyTokens, setEarlyTokens] = useState([]); const [trendingWords, setTrendingWords] = useState([]);
-  const [earlyLoading, setEarlyLoading] = useState(false); const [earlyError, setEarlyError] = useState(null); const [autoRadar, setAutoRadar] = useState(true);
+  const [earlyLoading, setEarlyLoading] = useState(false); const [earlyError, setEarlyError] = useState(null); const [earlyDiagnostics, setEarlyDiagnostics] = useState(null); const [autoRadar, setAutoRadar] = useState(true);
 
   useEffect(() => {
     const latestTx = transactions[0];
@@ -33,8 +33,8 @@ export default function App() {
 
   const runEarlyScan = useCallback(async () => {
     setEarlyLoading(true); setEarlyError(null);
-    try { const result = await runEarlyGemScan(); setEarlyTokens(result.tokens || []); setTrendingWords(result.trendingWords || []); }
-    catch (err) { setEarlyError(err.message || 'Early-token scan failed'); }
+    try { const result = await runEarlyGemScan(); setEarlyTokens(result.tokens || []); setTrendingWords(result.trendingWords || []); setEarlyDiagnostics(result.diagnostics || null); }
+    catch (err) { setEarlyError(err.message || 'Early-token scan failed'); setEarlyDiagnostics({ scanError: err.message || 'Early-token scan failed' }); }
     finally { setEarlyLoading(false); }
   }, []);
 
@@ -78,7 +78,7 @@ export default function App() {
       <div className="flex items-center gap-1 border-b border-brand-border overflow-x-auto">
         {tabs.map((tab) => <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`whitespace-nowrap px-4 py-2.5 text-sm font-medium transition-colors flex items-center gap-2 border-b-2 -mb-px ${activeTab === tab.id ? 'border-brand-accent text-white' : 'border-transparent text-brand-subtext hover:text-white hover:border-brand-border'}`}>{tab.label}{tab.count > 0 && <span className={`text-xs rounded-full px-1.5 py-0.5 font-mono ${activeTab === tab.id ? 'bg-brand-accent text-black' : 'bg-brand-border text-brand-subtext'}`}>{tab.count}</span>}</button>)}
       </div>
-      {activeTab === 'early' && <EarlyGems tokens={earlyTokens} trendingWords={trendingWords} loading={earlyLoading} onRefresh={runEarlyScan}/>}
+      {activeTab === 'early' && <EarlyGems tokens={earlyTokens} trendingWords={trendingWords} loading={earlyLoading} diagnostics={earlyDiagnostics} onRefresh={runEarlyScan}/>}
       {activeTab === 'paper' && <PaperTradingPanel tokens={earlyTokens}/>} 
       {activeTab === 'transactions' && <TransactionList transactions={transactions} onSnipe={handleSnipeClick}/>} 
       {activeTab === 'blocks' && <BlockList blocks={blocks}/>} 
