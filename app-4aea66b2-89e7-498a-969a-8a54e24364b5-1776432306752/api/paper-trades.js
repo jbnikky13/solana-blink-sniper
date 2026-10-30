@@ -3,25 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 const json = (res, status, body) => res.status(status).setHeader('Cache-Control','no-store').json(body);
 const requiredEnv = ['SUPABASE_URL','SUPABASE_ANON_KEY','SUPABASE_SERVICE_ROLE_KEY'];
 
-function validTrade(t) {
-  if (!t || typeof t !== 'object' || Array.isArray(t)) return false;
-  const positive = v => Number.isFinite(Number(v)) && Number(v) > 0;
-  return t.chain === 'solana' &&
-    t.status === 'OPEN' &&
-    t.strategy === 'solana-paper-v1' &&
-    typeof t.idempotencyKey === 'string' && t.idempotencyKey.length > 0 && t.idempotencyKey.length <= 160 &&
-    typeof t.tokenAddress === 'string' && t.tokenAddress.length > 0 && t.tokenAddress.length <= 128 &&
-    typeof t.openedAt === 'string' && Number.isFinite(Date.parse(t.openedAt)) &&
-    positive(t.quantity) && positive(t.entryPrice) &&
-    positive(t.entryReferenceBid) && positive(t.entryReferenceAsk) &&
-    Number(t.entryReferenceBid) <= Number(t.entryReferenceAsk) &&
-    positive(t.stopPrice) && Number(t.stopPrice) < Number(t.entryPrice) &&
-    positive(t.highWaterPrice) && positive(t.notionalUsd) &&
-    positive(t.riskBudgetUsd) &&
-    Number.isFinite(Number(t.entryFeeUsd)) && Number(t.entryFeeUsd) >= 0 &&
-    Number.isInteger(Number(t.feeBps)) && Number(t.feeBps) >= 0 && Number(t.feeBps) <= 10000 &&
-    Number.isInteger(Number(t.slippageBps)) && Number(t.slippageBps) >= 0 && Number(t.slippageBps) <= 5000;
-}
+import { isValidPaperTrade } from '../src/lib/paperTradeValidation.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET' && req.method !== 'POST') {
@@ -53,7 +35,7 @@ export default async function handler(req, res) {
   }
 
   const trade=req.body?.trade;
-  if (!validTrade(trade)) return json(res,400,{error:'Invalid paper trade payload'});
+  if (!isValidPaperTrade(trade)) return json(res,400,{error:'Invalid paper trade payload'});
   // This endpoint validates and persists a simulation submitted by the signed-in
   // client. It does not independently verify token security or market execution.
   const {data,error}=await admin.rpc('create_paper_trade',{p_user_id:userId,p_trade:trade});
