@@ -9,7 +9,7 @@ scheduler = AsyncIOScheduler(timezone=settings.timezone)
 
 
 async def notify(application: Application, fn) -> None:
-    result = fn()
+    result = await fn()
     if settings.telegram_allowed_user_id:
         await application.bot.send_message(chat_id=settings.telegram_allowed_user_id, text=result)
 
