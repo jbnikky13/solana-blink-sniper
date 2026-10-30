@@ -79,7 +79,7 @@ export default function App() {
         {tabs.map((tab) => <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`whitespace-nowrap px-4 py-2.5 text-sm font-medium transition-colors flex items-center gap-2 border-b-2 -mb-px ${activeTab === tab.id ? 'border-brand-accent text-white' : 'border-transparent text-brand-subtext hover:text-white hover:border-brand-border'}`}>{tab.label}{tab.count > 0 && <span className={`text-xs rounded-full px-1.5 py-0.5 font-mono ${activeTab === tab.id ? 'bg-brand-accent text-black' : 'bg-brand-border text-brand-subtext'}`}>{tab.count}</span>}</button>)}
       </div>
       {activeTab === 'early' && <EarlyGems tokens={earlyTokens} trendingWords={trendingWords} loading={earlyLoading} onRefresh={runEarlyScan}/>}
-      {activeTab === 'paper' && <PaperTradingPanel tokens={earlyTokens}/ >} 
+      {activeTab === 'paper' && <PaperTradingPanel tokens={earlyTokens}/>} 
       {activeTab === 'transactions' && <TransactionList transactions={transactions} onSnipe={handleSnipeClick}/>} 
       {activeTab === 'blocks' && <BlockList blocks={blocks}/>} 
       {activeTab === 'targets' && <SnipeList targets={targets} onUpdateStatus={handleUpdateStatus} onDelete={handleDelete}/>} 
