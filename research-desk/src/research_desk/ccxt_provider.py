@@ -22,6 +22,8 @@ class PublicCryptoDataProvider:
         try:
             await self.exchange.load_markets()
             market: dict[str, Any] = self.exchange.market(symbol)
+            if not isinstance(market, dict):
+                raise ValueError("Exchange did not return market metadata for this symbol")
             if market.get("spot") is not True or market.get("contract") is True:
                 raise ValueError("Only spot markets are supported by this public-data adapter")
             if market.get("active") is False:
@@ -30,6 +32,8 @@ class PublicCryptoDataProvider:
                 raise ValueError("This exchange does not expose unified OHLCV data")
 
             raw = await self.exchange.fetch_ohlcv(symbol, timeframe=timeframe, limit=limit)
+            if not raw:
+                raise ValueError("Exchange returned no OHLCV bars")
             received_at = datetime.now(timezone.utc)
             seconds = self.exchange.parse_timeframe(timeframe)
             now_seconds = received_at.timestamp()
