@@ -1,41 +1,52 @@
-from .config import settings
+import json
+from agenkit import Message
+from .agents import SCOUT, QUANT, BUILDER
 from .state import get_controls, record_job
 
+AGENTS = {"SCOUT": SCOUT, "QUANT": QUANT, "BUILDER": BUILDER}
 
-def run_stage(stage: str) -> str:
+
+async def run_stage(stage: str) -> str:
     controls = get_controls()
     if controls["killed"]:
         status, detail = "KILLED", "Kill switch active; stage not run."
     elif controls["paused"]:
         status, detail = "PAUSED", "Operator pause active; stage not run."
-    elif settings.market_data_provider.strip().lower() in {"", "none"}:
-        status, detail = "DATA_NOT_CONFIGURED", "No verified market-data provider configured. No prices, signals, backtests or trades generated."
+    elif stage in AGENTS:
+        response = await AGENTS[stage].process(
+            Message(role="user", content=json.dumps({"task": stage, "mode": "paper-only"}))
+        )
+        try:
+            result = json.loads(response.content)
+            status = result.get("status", "AGENT_RESPONSE_INVALID")
+            detail = result.get("reason", "Agent returned no explanatory status.")
+        except (TypeError, ValueError):
+            status, detail = "AGENT_RESPONSE_INVALID", "Agent returned an invalid response; fail closed."
     else:
-        # Provider integrations must be implemented and independently validated before this branch changes.
-        status, detail = "ADAPTER_NOT_IMPLEMENTED", "Provider adapter is not implemented. Fail closed; no signal or trade."
+        status, detail = "DATA_NOT_CONFIGURED", "No verified providers, backtesting engine or persistent paper ledger are connected."
     record_job(stage, status, detail)
     return f"{stage}: {status}\n{detail}"
 
 
-def scout() -> str:
-    return run_stage("SCOUT")
+async def scout() -> str:
+    return await run_stage("SCOUT")
 
 
-def quant() -> str:
-    return run_stage("QUANT")
+async def quant() -> str:
+    return await run_stage("QUANT")
 
 
-def builder() -> str:
-    return run_stage("BUILDER")
+async def builder() -> str:
+    return await run_stage("BUILDER")
 
 
-def independent_review() -> str:
-    return run_stage("INDEPENDENT_REVIEW")
+async def independent_review() -> str:
+    return await run_stage("INDEPENDENT_REVIEW")
 
 
-def morning_brief() -> str:
-    return run_stage("MORNING_BRIEF")
+async def morning_brief() -> str:
+    return await run_stage("MORNING_BRIEF")
 
 
-def weekly_review() -> str:
-    return run_stage("WEEKLY_REVIEW")
+async def weekly_review() -> str:
+    return await run_stage("WEEKLY_REVIEW")
