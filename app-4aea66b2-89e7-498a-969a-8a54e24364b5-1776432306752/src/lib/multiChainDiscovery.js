@@ -117,17 +117,20 @@ export function rankEarlyToken(token, trendingWords = []) {
   if (Number.isFinite(security.top10HolderPct) && security.top10HolderPct > 25) score -= 25;
   if (security.flags?.length) score -= Math.min(20, security.flags.length * 4);
 
+  const isSolana = token.chain === 'solana';
   const hardBlocked = security.isHoneypot === true
-    || security.mintAuthorityRevoked === false
-    || security.freezeAuthorityRevoked === false
-    || (Number.isFinite(security.top10HolderPct) && security.top10HolderPct > 25);
-  const verified = security.status === 'verified'
-    && security.mintAuthorityRevoked === true
-    && security.freezeAuthorityRevoked === true
-    && security.holderConcentrationStatus === 'verified'
-    && Number.isFinite(security.top10HolderPct)
-    && security.top10HolderPct <= 25
-    && security.isHoneypot === false;
+    || (isSolana && (security.mintAuthorityRevoked === false
+      || security.freezeAuthorityRevoked === false
+      || (Number.isFinite(security.top10HolderPct) && security.top10HolderPct > 25)));
+  const verified = isSolana
+    ? security.status === 'verified'
+      && security.mintAuthorityRevoked === true
+      && security.freezeAuthorityRevoked === true
+      && security.holderConcentrationStatus === 'verified'
+      && Number.isFinite(security.top10HolderPct)
+      && security.top10HolderPct <= 25
+      && security.isHoneypot === false
+    : security.status === 'checked' && security.isHoneypot === false;
 
   return {
     ...token,
