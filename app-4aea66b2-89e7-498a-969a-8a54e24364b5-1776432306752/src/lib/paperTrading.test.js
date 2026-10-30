@@ -1,0 +1,14 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {scannerAgent,analystAgent,riskManager,paperExecutor,evaluatePaperEntry,managePaperPosition} from './paperTrading.js';
+const token={chain:'solana',address:'mint',symbol:'TEST',score:82,scoreModel:'heuristic-discovery-v1',scannerGate:{decision:'PASS'},market:{liquidityUsd:100000,priceUsd:1,volume1h:50000,buys5m:18,sells5m:4},security:{status:'verified',isHoneypot:false,mintAuthorityRevoked:true,freezeAuthorityRevoked:true,holderConcentrationStatus:'verified',top10HolderPct:12}};
+
+test('scanner rejects estimated holder evidence',()=>{const r=scannerAgent({...token,security:{...token.security,holderConcentrationStatus:'estimated'}});assert.equal(r.decision,'REJECT');});
+test('analyst is a deterministic research gate',()=>{assert.equal(analystAgent(token).decision,'APPROVE');assert.equal(analystAgent({...token,score:69}).decision,'REJECT');});
+test('risk manager halts on drawdown and position cap',()=>{assert.equal(riskManager({equityUsd:1000,dailyRealizedPnlUsd:-30}).decision,'HALT');assert.equal(riskManager({equityUsd:1000,openPositions:3}).decision,'HALT');});
+test('executor requires risk approval and valid bid ask',()=>{assert.equal(paperExecutor({token,quote:{bid:1,ask:1.01},risk:{decision:'HALT'},idempotencyKey:'x'}).decision,'NO_ORDER');assert.equal(paperExecutor({token,quote:{bid:1.01,ask:1},risk:{decision:'ALLOW',riskBudgetUsd:10},idempotencyKey:'x'}).decision,'NO_ORDER');});
+test('entry is paper only and position size is risk capped',()=>{const r=evaluatePaperEntry({token,quote:{bid:.999,ask:1.001},account:{equityUsd:1000},idempotencyKey:'paper-1'});assert.equal(r.decision,'PAPER_OPENED');assert.equal(r.mode,'PAPER_ONLY');assert.ok(r.trade.notionalUsd<=200);assert.ok(r.trade.stopPrice<r.trade.entryPrice);});
+test('entry fails closed when scanner does not pass',()=>{const r=evaluatePaperEntry({token:{...token,scannerGate:{decision:'REVIEW'}},quote:{bid:1,ask:1.001},account:{equityUsd:1000},idempotencyKey:'paper-2'});assert.equal(r.decision,'REJECT');});
+test('trailing exit activates after favorable move and includes costs',()=>{const e=evaluatePaperEntry({token,quote:{bid:.999,ask:1},account:{equityUsd:1000},idempotencyKey:'paper-3'});const h=managePaperPosition(e.trade,{bid:1.09,ask:1.091});assert.equal(h.decision,'HOLD');assert.ok(h.position.trailingStopPrice>e.trade.stopPrice);const c=managePaperPosition(h.position,{bid:h.position.trailingStopPrice-.001,ask:h.position.trailingStopPrice});assert.equal(c.decision,'PAPER_CLOSED');assert.equal(c.position.status,'CLOSED');assert.ok(Number.isFinite(c.position.realizedPnlUsd));});
+
+test('scanner rejects null holder concentration even when status claims verified',()=>{const r=scannerAgent({...token,security:{...token.security,top10HolderPct:null}});assert.equal(r.decision,'REJECT');});
