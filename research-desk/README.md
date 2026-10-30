@@ -28,11 +28,12 @@ Agenkit package: https://pypi.org/project/agenkit/ . Project docs: https://agenk
 - Telegram bot with private-user authorization, status/risk/jobs/brief commands, pause, resume and kill.
 - Africa/Lagos scheduler for Scout, Quant, Builder, review, morning brief and Sunday weekly review.
 - SQLite-persisted operator controls and job audit history.
-- Initial fail-closed risk gate and unit tests.\n- Normalized OHLCV schema with timestamp, freshness, ordering and OHLC validation.\n- Next-bar-open baseline backtester with fee/slippage assumptions and mark-to-market drawdown.\n- Ten initial hypothesis templates, chronological walk-forward window generation, 1,000-path Monte Carlo drawdown and a pre-registered 25-point scorecard.
+- Initial fail-closed risk gate and unit tests.
+- Normalized OHLCV schema with timestamp, freshness, ordering and OHLC validation.\n- Next-bar-open baseline backtester with fee/slippage assumptions and mark-to-market drawdown.\n- Ten initial hypothesis templates, chronological walk-forward window generation, 1,000-path Monte Carlo drawdown and a pre-registered 25-point scorecard.
 - Dockerfile and Compose example with persistent SQLite volume.
 - Market provider coverage and cloud runbooks.
 
-**Still not operational:** market-data adapters, historical data store, research/backtesting engine, Monte Carlo evaluator, paper broker/venue adapters, real trade ledger, and independent review workflow. Scheduled agents therefore report DATA_NOT_CONFIGURED and produce no signals or trades.
+**Still not operational:** live market-data adapters, a durable historical market-data store, provider-backed hypothesis generation and walk-forward research orchestration, paper broker/venue adapters, real trade ledger, and independent review workflow. The baseline backtester and evaluation primitives are not yet connected to real datasets. Scheduled agents therefore report DATA_NOT_CONFIGURED and produce no signals or trades.
 
 ## Local setup
 
