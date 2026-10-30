@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from math import isfinite
 import random
-from statistics import quantiles
 from typing import Sequence
 
 
