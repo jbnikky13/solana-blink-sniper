@@ -2,7 +2,7 @@ name: Build
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'feat/**']
   pull_request:
     branches: [main]
 
@@ -20,4 +20,5 @@ jobs:
           cache: npm
           cache-dependency-path: app-4aea66b2-89e7-498a-969a-8a54e24364b5-1776432306752/package-lock.json
       - run: npm ci
+      - run: npm test
       - run: npm run build
