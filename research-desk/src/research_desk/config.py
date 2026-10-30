@@ -13,6 +13,10 @@ class Settings(BaseSettings):
     options_enabled: bool = False
     paper_execution_enabled: bool = False
     market_data_provider: str = "none"
+    crypto_exchange_id: str = ""
+    crypto_symbols: str = ""
+    crypto_timeframe: str = "1h"
+    crypto_bar_limit: int = 500
 
     @property
     def risk_budget_usd(self) -> float:
