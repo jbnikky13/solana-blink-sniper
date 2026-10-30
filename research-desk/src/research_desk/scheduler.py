@@ -24,7 +24,7 @@ def start_scheduler(application: Application) -> None:
         ("builder", builder, "0 5 * * *"),
         ("independent-review", independent_review, "45 6 * * *"),
         ("morning-brief", morning_brief, "30 7 * * *"),
-        ("weekly-review", weekly_review, "0 8 * * 0"),
+        ("weekly-review", weekly_review, "0 8 * * sun"),
     ]
     for job_id, fn, expression in jobs:
         minute, hour, day, month, weekday = expression.split()
