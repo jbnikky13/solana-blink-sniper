@@ -22,7 +22,7 @@ def make_bars(closes):
 
 def test_backtest_enters_on_next_bar_and_accounts_for_costs():
     bars = make_bars([100, 100, 110, 110])
-    signal = lambda history, index: 1 if index == 0 else 0
+    signal = lambda history, index: 1 if index < 2 else 0
     result = run_backtest(bars, signal, fee_bps_per_side=5, slippage_bps_per_side=5, periods_per_year=24 * 365)
     assert result.status == "COMPLETED"
     assert len(result.trades) == 1
