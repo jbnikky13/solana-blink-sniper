@@ -1,11 +1,11 @@
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from zoneinfo import ZoneInfo\nfrom apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from telegram.ext import Application
 from .config import settings
 from .pipeline import scout, quant, builder, independent_review, morning_brief, weekly_review
 from .state import initialize
 
-scheduler = AsyncIOScheduler(timezone=settings.timezone)
+scheduler = AsyncIOScheduler(timezone=ZoneInfo(settings.timezone))
 
 
 async def notify(application: Application, fn) -> None:
@@ -29,7 +29,7 @@ def start_scheduler(application: Application) -> None:
     for job_id, fn, expression in jobs:
         minute, hour, day, month, weekday = expression.split()
         scheduler.add_job(
-            notify, CronTrigger(minute=minute, hour=hour, day=day, month=month, day_of_week=weekday, timezone=settings.timezone),
+            notify, CronTrigger(minute=minute, hour=hour, day=day, month=month, day_of_week=weekday, timezone=ZoneInfo(settings.timezone)),
             id=job_id, args=[application, fn], replace_existing=True, coalesce=True, max_instances=1,
             misfire_grace_time=900,
         )
