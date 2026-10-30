@@ -40,12 +40,12 @@ def evaluate_trade(
     max_positions: int = 3,
 ) -> RiskDecision:
     """Fail-closed paper risk gate. It never submits or simulates an order."""
-    if trade.asset_type.strip().lower() in {"option", "options"}:
+    if trade.asset_type.strip().lower() in {"option", "options"} or trade.market.strip().lower() in {"option", "options"}:
         return RiskDecision(Decision.REJECT, "OPTIONS_PROHIBITED")
     if not trade.quote_is_executable or not trade.data_timestamp:
         return RiskDecision(Decision.REJECT, "MISSING_EXECUTABLE_TIMESTAMPED_QUOTE")
-    if trade.market.strip().lower() not in {"crypto", "us_equities", "us_etf", "forex", "commodities", "ngx"}:
-        return RiskDecision(Decision.REJECT, "UNSUPPORTED_MARKET")
+    if not trade.market.strip():
+        return RiskDecision(Decision.REJECT, "MARKET_REQUIRED")
     if trade.side.lower() not in {"buy", "sell", "long", "short"}:
         return RiskDecision(Decision.REJECT, "INVALID_SIDE")
     if trade.equity_usd <= 0 or trade.entry <= 0 or trade.stop <= 0 or trade.quantity <= 0:
