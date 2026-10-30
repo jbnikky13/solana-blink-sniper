@@ -20,7 +20,48 @@ function decodeUint(hex) { if (!hex || hex === '0x') return null; try { return N
 async function readErc20(rpc,address) { const [code,name,symbol,decimals,totalSupply]=await Promise.all([evmRpc(rpc,'eth_getCode',[address,'latest']),evmRpc(rpc,'eth_call',[{to:address,data:ERC20.name},'latest']).catch(()=>null),evmRpc(rpc,'eth_call',[{to:address,data:ERC20.symbol},'latest']).catch(()=>null),evmRpc(rpc,'eth_call',[{to:address,data:ERC20.decimals},'latest']).catch(()=>null),evmRpc(rpc,'eth_call',[{to:address,data:ERC20.totalSupply},'latest']).catch(()=>null)]); if(!code||code==='0x'||code.length<20||!(symbol||decimals||totalSupply))return null; return {address,name:decodeAbiString(name)||'Unknown token',symbol:decodeAbiString(symbol)||'UNKNOWN',decimals:decodeUint(decimals),totalSupply:totalSupply&&totalSupply!=='0x'?BigInt(totalSupply).toString():null,contractBytes:Math.max(0,(code.length-2)/2)}; }
 async function scanEvmContracts(chain) { const latest=Number(BigInt(await evmRpc(chain.rpc,'eth_blockNumber'))); const blocks=await Promise.all(Array.from({length:8},(_,i)=>latest-i).map((n)=>evmRpc(chain.rpc,'eth_getBlockByNumber',[`0x${n.toString(16)}`,true]).catch(()=>null))); const creations=[]; for(const block of blocks){for(const tx of block?.transactions||[]){if(!tx.to&&tx.creates)creations.push(tx.creates); if(!tx.to&&tx.hash&&!tx.creates){const receipt=await evmRpc(chain.rpc,'eth_getTransactionReceipt',[tx.hash]).catch(()=>null);if(receipt?.contractAddress)creations.push(receipt.contractAddress);} if(creations.length>=60)break;}if(creations.length>=60)break;} const tokens=[]; for(const address of [...new Set(creations.map((x)=>x.toLowerCase()))].slice(0,40)){try{const token=await readErc20(chain.rpc,address);if(token)tokens.push({...token,chain:chain.id,chainName:chain.name,discoveredBy:'new-contract'});}catch(_){}} return tokens; }
 function normalizeProfile(item){if(!item?.tokenAddress||!item?.chainId)return null;const chain=item.chainId==='solana'?CHAINS.solana:item.chainId==='arc'?CHAINS.arc:(item.chainId==='robin'||item.chainId==='robinhood')?CHAINS.robinhood:null;if(!chain)return null;return{address:item.tokenAddress,chain:chain.id,chainName:chain.name,name:item.description?.split(/\n| - | — /)[0]||'New token',symbol:item.symbol||'',description:item.description||'',icon:item.icon,profileUrl:item.url,discoveredBy:'dex-profile'};}
-export async function discoverEarlyTokens(){const [profiles,boosts,trending]=await Promise.all([getJson(DEX_LATEST_PROFILES()).catch(()=>[]),getJson(DEX_LATEST_BOOSTS()).catch(()=>[]),getJson(DEX_TRENDING_META()).catch(()=>[])]);const profileTokens=(Array.isArray(profiles)?profiles:[]).map(normalizeProfile).filter(Boolean);const boostTokens=(Array.isArray(boosts)?boosts:[]).map((item)=>({...normalizeProfile(item),boostAmount:Number(item.totalAmount||item.amount||0),discoveredBy:'dex-boost'})).filter(Boolean);const evmTokens=[];for(const chain of[CHAINS.arc,CHAINS.robinhood]){try{evmTokens.push(...await scanEvmContracts(chain));}catch(_){}}const merged=new Map();[...profileTokens,...boostTokens,...evmTokens].forEach((token)=>{const k=`${token.chain}:${token.address.toLowerCase()}`;merged.set(k,{...merged.get(k),...token});});return{tokens:[...merged.values()],trending:Array.isArray(trending)?trending:[]};}
+async function readDiscoverySource(name,url){try{const response=await fetch(url);if(!response.ok)throw new Error(`HTTP ${response.status}`);const data=await response.json();if(!Array.isArray(data))throw new Error('Unexpected response shape: expected an array');return{items:data,diagnostic:{name,status:'ok',httpStatus:response.status,rawCount:data.length,error:null}};}catch(error){return{items:[],diagnostic:{name,status:'error',httpStatus:null,rawCount:0,error:error?.message||'Request failed'}};}}
+export async function discoverEarlyTokens(){
+  const [profilesSource,boostsSource,trendingSource]=await Promise.all([
+    readDiscoverySource('DexScreener latest profiles',DEX_LATEST_PROFILES()),
+    readDiscoverySource('DexScreener latest boosts',DEX_LATEST_BOOSTS()),
+    readDiscoverySource('DexScreener trending metadata',DEX_TRENDING_META()),
+  ]);
+  const profileTokens=profilesSource.items.map(normalizeProfile).filter(Boolean);
+  const boostTokens=boostsSource.items.map((item)=>({...normalizeProfile(item),boostAmount:Number(item.totalAmount||item.amount||0),discoveredBy:'dex-boost'})).filter(Boolean);
+  const chainScans={};
+  const evmTokens=[];
+  for(const chain of[CHAINS.arc,CHAINS.robinhood]){
+    try{
+      const found=await scanEvmContracts(chain);
+      evmTokens.push(...found);
+      chainScans[chain.id]={status:'ok',count:found.length,error:null};
+    }catch(error){
+      chainScans[chain.id]={status:'error',count:0,error:error?.message||'RPC scan failed'};
+    }
+  }
+  const merged=new Map();
+  [...profileTokens,...boostTokens,...evmTokens].forEach((token)=>{
+    const k=`${token.chain}:${token.address.toLowerCase()}`;
+    merged.set(k,{...merged.get(k),...token});
+  });
+  const tokens=[...merged.values()];
+  const diagnostics={
+    sources:{
+      profiles:{...profilesSource.diagnostic,acceptedCount:profileTokens.length},
+      boosts:{...boostsSource.diagnostic,acceptedCount:boostTokens.length},
+      trending:{...trendingSource.diagnostic,acceptedCount:trendingSource.items.length},
+    },
+    chainScans,
+    totals:{
+      discovered:tokens.length,
+      solana:tokens.filter((token)=>token.chain==='solana').length,
+      arc:tokens.filter((token)=>token.chain==='arc').length,
+      robinhood:tokens.filter((token)=>token.chain==='robinhood').length,
+    },
+  };
+  return{tokens,trending:trendingSource.items,diagnostics};
+}
 export async function enrichToken(token) {
   const chain = CHAINS[token.chain];
   if (!chain) return token;
@@ -143,4 +184,34 @@ export function rankEarlyToken(token, trendingWords = []) {
   };
 }
 export function extractTrendingWords(trending,tokens=[]){const stop=new Set(['the','and','for','with','from','this','that','token','coin','chain','crypto','new']);const counts=new Map();const add=(value)=>String(value||'').toLowerCase().match(/[a-z][a-z0-9_-]{2,}/g)?.forEach((w)=>{if(!stop.has(w)&&!/^\d+$/.test(w))counts.set(w,(counts.get(w)||0)+1);});(Array.isArray(trending)?trending:[]).forEach((x)=>add(x.name||x.title||x.slug||x.description));tokens.forEach((x)=>{add(x.name);add(x.symbol);add(x.description);});return[...counts.entries()].sort((a,b)=>b[1]-a[1]).slice(0,20).map(([w])=>w);}
-export async function runEarlyGemScan(){const discovered=await discoverEarlyTokens();const snapshot=buildNarrativeSnapshot(discovered.tokens,discovered.trending);const words=snapshot.hotWords.map((x)=>x.word);const enriched=[];for(const token of discovered.tokens.slice(0,60)){try{const enrichedToken=attachNarrativeIntelligence(await enrichToken(token),snapshot);enriched.push(rankEarlyToken(enrichedToken,words));}catch(_){enriched.push(rankEarlyToken(attachNarrativeIntelligence(token,snapshot),words));}}enriched.sort((a,b)=>b.score-a.score);return{tokens:observeTokenBirths(enriched),trendingWords:words,narrativeSnapshot:snapshot};}
+export async function runEarlyGemScan(){
+  const discovered=await discoverEarlyTokens();
+  const snapshot=buildNarrativeSnapshot(discovered.tokens,discovered.trending);
+  const words=snapshot.hotWords.map((x)=>x.word);
+  const enriched=[];
+  let enrichmentSucceeded=0;
+  let enrichmentFailed=0;
+  let marketPairsFound=0;
+  for(const token of discovered.tokens.slice(0,60)){
+    try{
+      const enrichedToken=await enrichToken(token);
+      enrichmentSucceeded+=1;
+      if(enrichedToken.market)marketPairsFound+=1;
+      enriched.push(rankEarlyToken(attachNarrativeIntelligence(enrichedToken,snapshot),words));
+    }catch(_){
+      enrichmentFailed+=1;
+      enriched.push(rankEarlyToken(attachNarrativeIntelligence(token,snapshot),words));
+    }
+  }
+  enriched.sort((a,b)=>b.score-a.score);
+  return{
+    tokens:observeTokenBirths(enriched),
+    trendingWords:words,
+    narrativeSnapshot:snapshot,
+    diagnostics:{
+      ...discovered.diagnostics,
+      enrichment:{attempted:Math.min(discovered.tokens.length,60),succeeded:enrichmentSucceeded,failed:enrichmentFailed,marketPairsFound},
+      resultCount:enriched.length,
+    },
+  };
+}
