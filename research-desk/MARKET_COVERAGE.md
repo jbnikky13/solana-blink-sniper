@@ -37,3 +37,7 @@ Do not blend feeds from different venues without recording basis/spread differen
 7. Add NGX only after approved data access and sufficient historical coverage.
 
 No paid account, VPS, data subscription, or broker connection is authorized by this documentation.
+
+## CCXT OHLCV limitations
+
+The CCXT adapter is a public-data collector, not a consolidated institutional feed. Exchange OHLCV candles are secondary data and can lag the underlying trades; the current candle can be incomplete, so this adapter drops it. Do not use this feed for latency-sensitive scalping or claim broker-grade execution quality. The initial intended use is historical research and slower intraday/swing hypotheses. Faster strategies require exchange trades/order-book data, latency measurement and venue-specific fill simulation.
