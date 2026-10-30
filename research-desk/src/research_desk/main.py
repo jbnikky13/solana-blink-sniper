@@ -2,11 +2,11 @@ import logging
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
 from .config import settings
+from .state import activate_kill, get_controls, initialize, recent_jobs, set_paused
+from .scheduler import start_scheduler, stop_scheduler
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("research-desk")
-PAUSED = False
-KILLED = False
 
 
 def authorized(update: Update) -> bool:
@@ -24,15 +24,22 @@ async def reply(update: Update, text: str) -> None:
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await reply(update, "Blink-N-Snipe Research Desk\nPaper-only mode. Commands: /brief /agents /risk /signals /portfolio /performance /strategies /pause /resume /kill")
+    await reply(update, "Blink-N-Snipe Research Desk\nPaper-only mode. Commands: /brief /agents /risk /status /jobs /signals /portfolio /performance /strategies /pause /resume /kill")
 
 
 async def brief(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await reply(update, "Morning brief: DATA_NOT_CONFIGURED. No market feed is connected; no prices, signals or returns are being reported.")
+    jobs = recent_jobs(6)
+    if not jobs:
+        await reply(update, "No research runs recorded yet. The first scheduled collection is 01:00 WAT.")
+        return
+    lines = ["Recent research activity:"]
+    lines.extend(f"{j['started_at']} | {j['job_name']} | {j['status']}" for j in jobs)
+    lines.append("No market prices or trading signals are available until verified providers are configured.")
+    await reply(update, "\n".join(lines))
 
 
 async def agents(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await reply(update, "SCOUT: DATA_NOT_CONFIGURED\nQUANT: BLOCKED pending timestamped historical data\nBUILDER: BLOCKED pending independent review and a paper venue")
+    await reply(update, "SCOUT: Scheduled evidence collection; data provider not configured.\nQUANT: Waiting for validated timestamped historical data.\nBUILDER: Waiting for validated strategy, independent review and paper venue.\nAll three fail closed; no signals or trades are fabricated.")
 
 
 async def risk(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -40,40 +47,61 @@ async def risk(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await reply(update, text)
 
 
+async def status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    controls = get_controls()
+    await reply(update, f"PAUSED: {controls['paused']}\nKILL SWITCH: {controls['killed']}\nDATA PROVIDER: {settings.market_data_provider}\nPAPER EXECUTION: {settings.paper_execution_enabled}")
+
+
+async def jobs(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    rows = recent_jobs(10)
+    if not rows:
+        await reply(update, "No scheduled job history yet.")
+        return
+    await reply(update, "\n".join(f"{r['started_at']} | {r['job_name']} | {r['status']}" for r in rows))
+
+
 async def unavailable(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await reply(update, "No verified market data or persisted paper ledger is connected yet. This command is not active.")
+    await reply(update, "This view is not active yet. Verified market feeds, the persistent paper ledger and paper venue adapters are not configured.")
 
 
 async def pause(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    global PAUSED
-    PAUSED = True
-    await reply(update, "Pause flag set for this process. Persistent pause state is not yet configured.")
+    set_paused(True)
+    await reply(update, "PAUSED. Scheduled stages will be skipped. The pause is saved across worker restarts.")
 
 
 async def resume(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    global PAUSED
-    if KILLED:
-        await reply(update, "Kill switch is active. Manual operator review is required; /resume cannot override /kill.")
+    controls = get_controls()
+    if controls["killed"]:
+        await reply(update, "KILL SWITCH IS ACTIVE. /resume cannot override it. Manual operator review and a controlled reset are required.")
         return
-    PAUSED = False
-    await reply(update, "Pause flag cleared. Data collection and paper execution remain disabled until validated.")
+    set_paused(False)
+    await reply(update, "Pause cleared. Research can resume, but paper execution and data providers remain disabled until independently configured.")
 
 
 async def kill(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    global PAUSED, KILLED
-    PAUSED = True
-    KILLED = True
-    await reply(update, "KILL SWITCH ACTIVE. Manual operator review is required before restart.")
+    activate_kill()
+    await reply(update, "KILL SWITCH ACTIVE and persisted. Scheduled stages will be skipped. Manual operator review is required before reset.")
+
+
+async def on_startup(application: Application) -> None:
+    initialize()
+    start_scheduler(application)
+    log.info("Research desk scheduler started in %s", settings.timezone)
+
+
+async def on_shutdown(application: Application) -> None:
+    stop_scheduler()
 
 
 def build_application() -> Application:
     if not settings.telegram_bot_token or not settings.telegram_allowed_user_id:
         raise RuntimeError("Set TELEGRAM_BOT_TOKEN and TELEGRAM_ALLOWED_USER_ID before starting the bot")
-    app = Application.builder().token(settings.telegram_bot_token).build()
+    app = Application.builder().token(settings.telegram_bot_token).post_init(on_startup).post_shutdown(on_shutdown).build()
     handlers = {
         "start": start, "brief": brief, "agents": agents, "risk": risk,
-        "signals": unavailable, "portfolio": unavailable, "performance": unavailable,
-        "strategies": unavailable, "pause": pause, "resume": resume, "kill": kill,
+        "status": status, "jobs": jobs, "signals": unavailable, "portfolio": unavailable,
+        "performance": unavailable, "strategies": unavailable, "pause": pause,
+        "resume": resume, "kill": kill,
     }
     for command, handler in handlers.items():
         app.add_handler(CommandHandler(command, handler))
