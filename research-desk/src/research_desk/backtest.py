@@ -75,7 +75,9 @@ def run_backtest(
         if desired != position:
             if position:
                 gross_multiple = 1 + position * (fill_price / entry_price - 1)
-                closed_equity = entry_equity * max(0.0, gross_multiple) * (1 - side_cost)
+                if gross_multiple <= 0:
+                    return BacktestResult("REJECTED", "EQUITY_DEPLETED", len(bars), tuple(trades), -1.0, 1.0, 0.0)
+                closed_equity = entry_equity * gross_multiple * (1 - side_cost)
                 net_return = closed_equity / trade_start_equity - 1
                 trades.append(TradeResult(position, entry_time, fill_bar.timestamp.isoformat(), entry_price, fill_price, net_return))
                 realized_equity = closed_equity
@@ -90,7 +92,9 @@ def run_backtest(
 
         if position:
             gross_multiple = 1 + position * (fill_bar.close / entry_price - 1)
-            marked_equity = entry_equity * max(0.0, gross_multiple)
+            if gross_multiple <= 0:
+                return BacktestResult("REJECTED", "EQUITY_DEPLETED", len(bars), tuple(trades), -1.0, 1.0, 0.0)
+            marked_equity = entry_equity * gross_multiple
         else:
             marked_equity = realized_equity
 
@@ -103,7 +107,9 @@ def run_backtest(
     if position:
         last_bar = bars[-1]
         gross_multiple = 1 + position * (last_bar.close / entry_price - 1)
-        closed_equity = entry_equity * max(0.0, gross_multiple) * (1 - side_cost)
+        if gross_multiple <= 0:
+            return BacktestResult("REJECTED", "EQUITY_DEPLETED", len(bars), tuple(trades), -1.0, 1.0, 0.0)
+        closed_equity = entry_equity * gross_multiple * (1 - side_cost)
         net_return = closed_equity / trade_start_equity - 1
         trades.append(TradeResult(position, entry_time, last_bar.timestamp.isoformat(), entry_price, last_bar.close, net_return))
         realized_equity = closed_equity
