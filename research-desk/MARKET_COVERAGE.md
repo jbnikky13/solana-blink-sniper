@@ -5,7 +5,7 @@ This desk is multi-market by design, but adapters must be qualified separately. 
 | Market | Candidate source / venue | What is verified | Current status |
 |---|---|---|---|
 | US stocks and ETFs | Alpaca market data + Alpaca paper trading | Alpaca documents US stocks/ETFs, market data and a paper simulation. | Candidate only; account and credentials not connected. |
-| Crypto spot | Exchange public market-data API (CCXT adapter candidate) | Public market data can be collected without enabling trading; venue-specific symbol and rate-limit checks are required. | Not implemented. |
+| Crypto spot | Exchange public market-data API (CCXT) | A read-only spot OHLCV adapter is implemented; it uses public endpoints, checks spot market status, drops the incomplete candle and stores validated bars. | Implemented but not configured; no exchange or symbols selected. |
 | FX, metals, energies and index CFDs | User's Headway Demo through MetaTrader 5 | Headway documents MT5 demo accounts and the Headway-Demo server. MetaQuotes documents Python-to-MT5 terminal integration for quotes, bars, account state and orders. | Preferred demo gateway candidate; requires a Windows machine/VPS running MT5. No credentials requested or connected. |
 | NGX equities | NGX X-DataPortal / official NGX data API | NGX documents a free seven-day historical portal tier and separately licensed real-time/API and historical data products. | Data-access and licensing review required before use. |
 
