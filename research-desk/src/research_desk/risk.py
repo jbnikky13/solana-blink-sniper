@@ -17,8 +17,9 @@ class ProposedPaperTrade:
     stop: float
     quantity: float
     equity_usd: float
+    day_start_equity_usd: float | None = None
     open_positions: int = 0
-    realized_daily_pnl_usd: float = 0.0
+    daily_pnl_usd: float = 0.0
     data_timestamp: str | None = None
     quote_is_executable: bool = False
 
@@ -31,9 +32,15 @@ class RiskDecision:
     notional_usd: float = 0.0
 
 
-def evaluate_trade(trade: ProposedPaperTrade, *, risk_pct: float = 0.01, daily_loss_pct: float = 0.03, max_positions: int = 3, options_enabled: bool = False) -> RiskDecision:
+def evaluate_trade(
+    trade: ProposedPaperTrade,
+    *,
+    risk_pct: float = 0.01,
+    daily_loss_pct: float = 0.03,
+    max_positions: int = 3,
+) -> RiskDecision:
     """Fail-closed paper risk gate. It never submits or simulates an order."""
-    if trade.asset_type.strip().lower() in {"option", "options"} and not options_enabled:
+    if trade.asset_type.strip().lower() in {"option", "options"}:
         return RiskDecision(Decision.REJECT, "OPTIONS_PROHIBITED")
     if not trade.quote_is_executable or not trade.data_timestamp:
         return RiskDecision(Decision.REJECT, "MISSING_EXECUTABLE_TIMESTAMPED_QUOTE")
@@ -45,7 +52,10 @@ def evaluate_trade(trade: ProposedPaperTrade, *, risk_pct: float = 0.01, daily_l
         return RiskDecision(Decision.REJECT, "INVALID_TRADE_VALUES")
     if trade.open_positions >= max_positions:
         return RiskDecision(Decision.REJECT, "MAX_OPEN_POSITIONS_REACHED")
-    if trade.realized_daily_pnl_usd <= -(trade.equity_usd * daily_loss_pct):
+    day_start_equity = trade.day_start_equity_usd or trade.equity_usd
+    if day_start_equity <= 0:
+        return RiskDecision(Decision.REJECT, "INVALID_DAY_START_EQUITY")
+    if trade.daily_pnl_usd <= -(day_start_equity * daily_loss_pct):
         return RiskDecision(Decision.REJECT, "DAILY_LOSS_LIMIT_REACHED")
     distance = abs(trade.entry - trade.stop)
     if distance <= 0:
