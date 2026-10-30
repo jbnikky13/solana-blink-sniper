@@ -40,8 +40,8 @@ def monte_carlo_max_drawdown(
     seed: int = 7,
 ) -> MonteCarloDrawdown:
     """Bootstrap out-of-sample net trade returns; this is not a forecast."""
-    if not trade_returns:
-        raise ValueError("At least one out-of-sample trade return is required")
+    if len(trade_returns) < 30:
+        raise ValueError("At least 30 out-of-sample trades are required for Monte Carlo screening")
     if simulations < 100:
         raise ValueError("At least 100 simulations are required")
     if any(not isfinite(value) or value <= -1 for value in trade_returns):
