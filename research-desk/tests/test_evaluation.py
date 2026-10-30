@@ -15,7 +15,9 @@ def test_monte_carlo_rejects_empty_or_impossible_returns():
     with pytest.raises(ValueError):
         monte_carlo_max_drawdown([])
     with pytest.raises(ValueError):
-        monte_carlo_max_drawdown([-1.0])
+        monte_carlo_max_drawdown([-1.0] * 30)
+    with pytest.raises(ValueError):
+        monte_carlo_max_drawdown([0.01] * 29)
 
 
 def test_walk_forward_windows_are_chronological_and_non_overlapping():
