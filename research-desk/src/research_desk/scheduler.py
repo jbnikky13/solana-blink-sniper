@@ -1,4 +1,5 @@
-from zoneinfo import ZoneInfo\nfrom apscheduler.schedulers.asyncio import AsyncIOScheduler
+from zoneinfo import ZoneInfo
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from telegram.ext import Application
 from .config import settings
