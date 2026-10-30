@@ -43,3 +43,13 @@ def test_daily_loss_uses_day_start_equity():
 def test_position_limit():
     result = evaluate_trade(proposal(open_positions=3))
     assert result.reason == "MAX_OPEN_POSITIONS_REACHED"
+
+
+def test_no_arbitrary_market_allowlist():
+    result = evaluate_trade(proposal(market="new_asset_class"))
+    assert result.decision is Decision.APPROVE
+
+
+def test_rejects_options_even_if_market_label_is_options():
+    result = evaluate_trade(proposal(market="options", asset_type="derivative"))
+    assert result.reason == "OPTIONS_PROHIBITED"
