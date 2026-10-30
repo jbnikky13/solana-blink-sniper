@@ -54,6 +54,8 @@ def main() -> int:
             if info is None or tick is None:
                 result["quotes"].append({"symbol": symbol, "status": "SYMBOL_OR_TICK_UNAVAILABLE"})
                 continue
+            rates = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_H1, 0, 500)
+            history = [] if rates is None else list(rates)
             result["quotes"].append({
                 "symbol": symbol,
                 "status": "OK",
@@ -64,6 +66,9 @@ def main() -> int:
                 "digits": info.digits,
                 "trade_mode": info.trade_mode,
                 "spread_points": info.spread,
+                "h1_bars_available": len(history),
+                "oldest_h1_bar_utc": datetime.fromtimestamp(int(history[-1]["time"]), timezone.utc).isoformat() if history else None,
+                "newest_h1_bar_utc": datetime.fromtimestamp(int(history[0]["time"]), timezone.utc).isoformat() if history else None,
             })
 
         print(json.dumps(result, indent=2))
